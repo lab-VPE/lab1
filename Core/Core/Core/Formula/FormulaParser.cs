@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 namespace Core.Formula;
 
@@ -13,16 +13,15 @@ public class FormulaParser
         _pos = 0;
     }
 
-    // Проверяет формулу: можно ли её распарсить
     public bool IsValid(out string errorMessage)
     {
         try
         {
             _pos = 0;
-            ParseExpression();
+            ParseExpression(0);
             if (_pos < _formula.Length)
             {
-                errorMessage = $"Неожиданный символ: '{_formula[_pos]}'";
+                errorMessage = $"Unexpected character: '{_formula[_pos]}'";
                 return false;
             }
             errorMessage = "";
@@ -35,13 +34,12 @@ public class FormulaParser
         }
     }
 
-    // Считает значение формулы при заданном x
     public double Evaluate(double x)
     {
         _pos = 0;
         var result = ParseExpression(x);
         if (_pos < _formula.Length)
-            throw new Exception($"Неожиданный символ: '{_formula[_pos]}'");
+            throw new Exception($"Unexpected character: '{_formula[_pos]}'");
         return result;
     }
 
@@ -64,12 +62,10 @@ public class FormulaParser
         {
             var op = _formula[_pos++];
             var right = ParseFactor(x);
-            if (op == '*')
-                left *= right;
+            if (op == '*') left *= right;
             else
             {
-                if (Math.Abs(right) < 1e-12)
-                    throw new Exception("Деление на ноль");
+                if (Math.Abs(right) < 1e-12) throw new Exception("Division by zero");
                 left /= right;
             }
         }
@@ -79,70 +75,58 @@ public class FormulaParser
     private double ParseFactor(double x)
     {
         var value = ParsePower(x);
-
-        // Унарный минус
         if (_pos < _formula.Length && _formula[_pos] == '-')
         {
             _pos++;
             return -ParseFactor(x);
         }
-
         return value;
     }
 
     private double ParsePower(double x)
     {
         var baseValue = ParsePrimary(x);
-
         if (_pos < _formula.Length && _formula[_pos] == '^')
         {
             _pos++;
             var exponent = ParsePower(x);
             return Math.Pow(baseValue, exponent);
         }
-
         return baseValue;
     }
 
     private double ParsePrimary(double x)
     {
-        if (_pos >= _formula.Length)
-            throw new Exception("Неожиданный конец формулы");
-
+        if (_pos >= _formula.Length) throw new Exception("Unexpected end of formula");
         var c = _formula[_pos];
 
-        // Скобки
         if (c == '(')
         {
             _pos++;
             var value = ParseExpression(x);
             if (_pos >= _formula.Length || _formula[_pos] != ')')
-                throw new Exception("Не закрыта скобка");
+                throw new Exception("Unclosed parenthesis");
             _pos++;
             return value;
         }
 
-        // Переменная x
         if (c == 'x')
         {
             _pos++;
             return x;
         }
 
-        // Число
         if (char.IsDigit(c) || c == '.')
         {
             var start = _pos;
             while (_pos < _formula.Length && (char.IsDigit(_formula[_pos]) || _formula[_pos] == '.'))
                 _pos++;
-
             var numberStr = _formula.Substring(start, _pos - start);
             if (!double.TryParse(numberStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
-                throw new Exception($"Не удалось разобрать число: '{numberStr}'");
-
+                throw new Exception($"Failed to parse number: '{numberStr}'");
             return number;
         }
 
-        throw new Exception($"Неожиданный символ: '{c}'");
+        throw new Exception($"Unexpected character: '{c}'");
     }
 }

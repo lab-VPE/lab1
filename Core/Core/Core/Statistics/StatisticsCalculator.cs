@@ -1,4 +1,4 @@
-﻿using Core.Models;
+using Core.Models;
 
 namespace Core.Physics;
 
@@ -7,11 +7,8 @@ public static class StatisticsCalculator
     public static StatisticsResult Calculate(List<TrajectoryPoint> trajectory, double startAngle)
     {
         var result = new StatisticsResult();
+        if (trajectory.Count == 0) return result;
 
-        if (trajectory.Count == 0)
-            return result;
-
-        // Длина пути
         double pathLength = 0;
         for (int i = 1; i < trajectory.Count; i++)
         {
@@ -21,12 +18,9 @@ public static class StatisticsCalculator
         }
         result.PathLength = Math.Round(pathLength, 4);
 
-        // Полное отклонение
         double endAngle = trajectory[^1].Angle;
-        double deviation = Math.Abs(endAngle - startAngle);
-        result.TotalDeviation = Math.Round(deviation, 4);
+        result.TotalDeviation = Math.Round(Math.Abs(endAngle - startAngle), 4);
 
-        // Максимальная кривизна — оцениваем по изменению угла на шаг
         double maxCurvature = 0;
         int maxCurvatureIndex = 0;
         for (int i = 1; i < trajectory.Count; i++)
@@ -52,7 +46,6 @@ public static class StatisticsCalculator
             Y = trajectory[maxCurvatureIndex].Y
         };
 
-        // Мин/макс показателя преломления
         double nMin = double.MaxValue;
         double nMax = double.MinValue;
         foreach (var p in trajectory)
@@ -62,7 +55,6 @@ public static class StatisticsCalculator
         }
         result.RefractionIndexMin = Math.Round(nMin, 4);
         result.RefractionIndexMax = Math.Round(nMax, 4);
-
         result.Steps = trajectory.Count;
 
         return result;
