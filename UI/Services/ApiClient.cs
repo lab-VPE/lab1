@@ -11,7 +11,7 @@ namespace UI.Services;
 public class ApiClient
 {
     /// <summary>true — читаем Assets/*.json, false — ходим на сервер.</summary>
-    public bool UseLocal { get; set; } = true;
+    public bool UseLocal { get; set; } = false;
 
     // Порт Controller из Controller/Properties/launchSettings.json (профиль http)
     public const string ServerBase = "http://localhost:5067";
