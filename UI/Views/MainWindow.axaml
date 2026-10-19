@@ -1,0 +1,124 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctrl="using:UI.Controls"
+        x:Class="UI.Views.MainWindow"
+        Title="Траектория луча в неоднородной среде"
+        Width="1280" Height="800" MinWidth="1000" MinHeight="650">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.error">
+            <Setter Property="Foreground" Value="#ff6b6b" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#9aa0ae" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,8,0,2" />
+        </Style>
+        <Style Selector="TextBlock.stat">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="300,*,280">
+
+        <!-- ================= Левая панель: форма ================= -->
+        <ScrollViewer Grid.Column="0" Background="#1b1e26">
+            <StackPanel Margin="16" Spacing="2">
+                <TextBlock Text="Параметры" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
+
+                <TextBlock Classes="label" Text="Формула среды n(x, y)" />
+                <TextBox Text="{Binding EnvironmentFormula, Mode=TwoWay}" Watermark="1.0 + 0.05*x" />
+                <TextBlock Classes="error" Text="{Binding FormulaError}" />
+
+                <TextBlock Classes="label" Text="Старт X" />
+                <TextBox Text="{Binding StartXText, Mode=TwoWay}" />
+                <TextBlock Classes="error" Text="{Binding XError}" />
+
+                <TextBlock Classes="label" Text="Старт Y" />
+                <TextBox Text="{Binding StartYText, Mode=TwoWay}" />
+                <TextBlock Classes="error" Text="{Binding YError}" />
+
+                <TextBlock Classes="label" Text="Угол, градусы (-360…360)" />
+                <TextBox Text="{Binding StartAngleText, Mode=TwoWay}" />
+                <TextBlock Classes="error" Text="{Binding AngleError}" />
+
+                <TextBlock Classes="label" Text="Шаг расчёта (0…1]" />
+                <TextBox Text="{Binding StepSizeText, Mode=TwoWay}" />
+                <TextBlock Classes="error" Text="{Binding StepError}" />
+
+                <TextBlock Classes="label" Text="Цвет луча (#rrggbb)" />
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Grid.Column="0" Text="{Binding Color, Mode=TwoWay}" />
+                    <Border Grid.Column="1" Width="32" Height="32" Margin="8,0,0,0"
+                            CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                            Background="{Binding Color}" />
+                </Grid>
+                <TextBlock Classes="error" Text="{Binding ColorError}" />
+
+                <StackPanel Spacing="8" Margin="0,16,0,0">
+                    <Button Content="Проверить" Command="{Binding CheckCommand}" />
+                    <Button Content="Запустить" Command="{Binding RunCommand}" Classes="accent" />
+                    <Button Content="Сбросить" Command="{Binding ResetCommand}" />
+                </StackPanel>
+
+                <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsRunning}" Margin="0,12,0,0" />
+                <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Margin="0,8,0,0" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================= Центр: сцена и график ================= -->
+        <Grid Grid.Column="1" RowDefinitions="*,220" Margin="8">
+            <Border Grid.Row="0" CornerRadius="6" ClipToBounds="True">
+                <ctrl:RayCanvas x:Name="Scene" Progress="{Binding Progress}" />
+            </Border>
+            <Border Grid.Row="1" Margin="0,8,0,0" CornerRadius="6" Background="#14161c" Padding="4">
+                <ctrl:RefractionChart x:Name="Chart" />
+            </Border>
+        </Grid>
+
+        <!-- ================= Правая панель: статистика ================= -->
+        <ScrollViewer Grid.Column="2" Background="#1b1e26">
+            <StackPanel Margin="16">
+                <TextBlock Text="Статистика" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+                <TextBlock Classes="label" Text="Длина пути (PathLength)" Margin="0" />
+                <TextBlock Classes="stat" Text="{Binding Statistics.PathLength, StringFormat='{}{0:F4}', FallbackValue=—}" />
+
+                <TextBlock Classes="label" Text="Общее отклонение (TotalDeviation)" Margin="0" />
+                <TextBlock Classes="stat" Text="{Binding Statistics.TotalDeviation, StringFormat='{}{0:F4}', FallbackValue=—}" />
+
+                <TextBlock Classes="label" Text="Макс. кривизна (MaxCurvature)" Margin="0" />
+                <TextBlock Classes="stat" Text="{Binding Statistics.MaxCurvature, StringFormat='{}{0:F6}', FallbackValue=—}" />
+
+                <TextBlock Classes="label" Text="Кривизна максимальна в (MaxCurvatureAt)" Margin="0" />
+                <TextBlock Classes="stat" Text="{Binding MaxCurvatureAtText}" />
+
+                <TextBlock Classes="label" Text="Мин. показатель преломления" Margin="0" />
+                <TextBlock Classes="stat" Text="{Binding Statistics.RefractionIndexMin, StringFormat='{}{0:F4}', FallbackValue=—}" />
+
+                <TextBlock Classes="label" Text="Макс. показатель преломления" Margin="0" />
+                <TextBlock Classes="stat" Text="{Binding Statistics.RefractionIndexMax, StringFormat='{}{0:F4}', FallbackValue=—}" />
+
+                <TextBlock Classes="label" Text="Шагов (Steps)" Margin="0" />
+                <TextBlock Classes="stat" Text="{Binding Statistics.Steps, FallbackValue=—}" />
+
+                <TextBlock Classes="label" Text="Время расчёта, мс" Margin="0" />
+                <TextBlock Classes="stat" Text="{Binding Statistics.ComputationTimeMs, FallbackValue=—}" />
+
+                <Separator Margin="0,8" />
+
+                <TextBlock Text="Время" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4" />
+                <Slider x:Name="TimeSlider" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1"
+                        Value="{Binding Progress, Mode=TwoWay}" />
+                <TextBlock Text="{Binding PointsInfo, StringFormat='Точка: {0}'}" Foreground="#9aa0ae" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

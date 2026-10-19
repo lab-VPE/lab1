@@ -1,0 +1,30 @@
+# Соглашения о форматировании для всех участников проекта
+root = true
+
+# ===== Общие правила для всех файлов =====
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+# ===== C# — 4 пробела =====
+[*.cs]
+indent_size = 4
+
+# ===== JS / TS — 2 пробела =====
+[*.{js,ts}]
+indent_size = 2
+
+# ===== HTML / CSS — 2 пробела =====
+[*.{html,css,scss}]
+indent_size = 2
+
+# ===== JSON / YAML / MD =====
+[*.{json,yml,yaml,md}]
+indent_size = 2
+
+# ===== Служебные файлы .NET =====
+[*.{csproj,sln,props,targets}]
+indent_size = 4
