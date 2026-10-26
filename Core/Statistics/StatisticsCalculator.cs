@@ -28,8 +28,7 @@ public static class StatisticsCalculator
 
             double dAngle = Math.Abs(trajectory[i].Angle - trajectory[i - 1].Angle) * (Math.PI / 180.0);
 
-            double dAngle = Math.Abs(trajectory[i].Angle - trajectory[i - 1].Angle);
-
+        
             double dx = trajectory[i].X - trajectory[i - 1].X;
             double dy = trajectory[i].Y - trajectory[i - 1].Y;
             double dLen = Math.Sqrt(dx * dx + dy * dy);
