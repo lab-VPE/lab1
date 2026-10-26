@@ -27,7 +27,7 @@ public class RefractionChart : UserControl
             LegendTextPaint = new SolidColorPaint(Text),
             XAxes = new[]
             {
-                new Axis { Name = "Точка", LabelsPaint = new SolidColorPaint(Text), NamePaint = new SolidColorPaint(Text) }
+                new Axis { Name = "Координата x", LabelsPaint = new SolidColorPaint(Text), NamePaint = new SolidColorPaint(Text) }
             },
             YAxes = new[]
             {
