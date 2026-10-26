@@ -74,24 +74,6 @@ lab1/
 ├── UI/                        ← пишет Захар (C#, Avalonia)
 └── Core.Tests/                ← тесты ядра (xUnit)
 
-## Структура папок
-
-```
-lab1/
-├── README.md                  ← этот файл
-├── .gitignore
-├── .editorconfig
-├── global.json
-├── lab1.sln                   ← solution, объединяющий три проекта
-│
-├── docs/
-│   └── description.md         ← описание программы
-│
-├── Core/                      ← пишет Всеволод (C#, библиотека классов)
-├── Controller/                ← пишет Всеволод (C#, ASP.NET Core)
-└── UI/                        ← пишет Захар (C#, Avalonia)
-```
-
 ---
 
 ## Как слои общаются: JSON-контракт
