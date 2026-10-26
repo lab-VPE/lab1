@@ -43,7 +43,9 @@ public class FormulaParser
         return result;
     }
 
+
     // Обработка сложения и вычитания (бинарные операторы)
+
     private double ParseExpression(double x)
     {
         var left = ParseTerm(x);
@@ -56,7 +58,9 @@ public class FormulaParser
         return left;
     }
 
+
     // Обработка умножения и деления
+
     private double ParseTerm(double x)
     {
         var left = ParseFactor(x);
@@ -74,18 +78,30 @@ public class FormulaParser
         return left;
     }
 
+
     // Обработка унарного минуса (например, -x или -5)
     private double ParseFactor(double x)
     {
+
+    private double ParseFactor(double x)
+    {
+        var value = ParsePower(x);
+
         if (_pos < _formula.Length && _formula[_pos] == '-')
         {
             _pos++;
             return -ParseFactor(x);
         }
+
         return ParsePower(x);
     }
 
     // Обработка степеней
+
+        return value;
+    }
+
+
     private double ParsePower(double x)
     {
         var baseValue = ParsePrimary(x);
@@ -132,4 +148,7 @@ public class FormulaParser
 
         throw new Exception($"Unexpected character: '{c}'");
     }
+
 }
+}
+
