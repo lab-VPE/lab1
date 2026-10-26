@@ -25,7 +25,11 @@ public static class StatisticsCalculator
         int maxCurvatureIndex = 0;
         for (int i = 1; i < trajectory.Count; i++)
         {
+
             double dAngle = Math.Abs(trajectory[i].Angle - trajectory[i - 1].Angle) * (Math.PI / 180.0);
+
+            double dAngle = Math.Abs(trajectory[i].Angle - trajectory[i - 1].Angle);
+
             double dx = trajectory[i].X - trajectory[i - 1].X;
             double dy = trajectory[i].Y - trajectory[i - 1].Y;
             double dLen = Math.Sqrt(dx * dx + dy * dy);

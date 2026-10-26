@@ -32,7 +32,11 @@ public static class Validators
             return ValidationResult.Fail("Формула не может быть пустой");
 
         var s = value.Trim();
+
         if (s.Length < 1)
+
+        if (s.Length < 4)
+
             return ValidationResult.Fail("Формула слишком короткая");
 
         foreach (var c in s)
