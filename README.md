@@ -57,22 +57,23 @@ text
 ---
 
 ## Структура папок
+
 lab1/
-├── README.md ← этот файл
-├── LICENSE ← лицензия MIT
+├── README.md                  ← этот файл
+├── LICENSE                    ← лицензия MIT
 ├── .gitignore
 ├── .editorconfig
 ├── global.json
-├── lab1.sln ← solution, объединяющий три проекта
+├── lab1.sln                   ← solution, объединяющий все проекты
 │
 ├── docs/
-│ ├── description.md ← описание программы
-│ └── screenshot.png ← скриншот интерфейса
+│   ├── description.md         ← описание программы
+│   └── screenshot.png         ← скриншот интерфейса
 │
-├── Core/ ← пишет Всеволод (C#, библиотека классов)
-├── Controller/ ← пишет Всеволод (C#, ASP.NET Core)
-└── UI/ ← пишет Захар (C#, Avalonia)
-
+├── Core/                      ← пишет Всеволод (C#, библиотека классов)
+├── Controller/                ← пишет Всеволод (C#, ASP.NET Core)
+├── UI/                        ← пишет Захар (C#, Avalonia)
+└── Core.Tests/                ← тесты ядра (xUnit)
 text
 
 ---
