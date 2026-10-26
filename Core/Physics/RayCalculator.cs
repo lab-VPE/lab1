@@ -23,11 +23,9 @@ public class RayCalculator
 
         try
         {
-
             double startN = parser.Evaluate(request.StartPoint.X);
             if (double.IsNaN(startN) || double.IsInfinity(startN) || startN <= 0)
                 throw new Exception($"Invalid initial refraction index at start point: {startN}");
-
 
             var trajectory = CalculateTrajectory(request, parser);
             result.Trajectory = trajectory;
@@ -54,17 +52,7 @@ public class RayCalculator
         double angle = request.StartAngle;
         double step = request.StepSize;
 
-
         points.Add(new TrajectoryPoint { X = x, Y = y, N = SafeEvaluate(parser, x), Angle = angle });
-
-        points.Add(new TrajectoryPoint
-        {
-            X = x,
-            Y = y,
-            N = SafeEvaluate(parser, x),
-            Angle = angle
-        });
-
 
         int maxSteps = 100000;
         int steps = 0;
@@ -83,13 +71,8 @@ public class RayCalculator
 
             double n2 = SafeEvaluate(parser, newX);
 
-
             if (double.IsNaN(n2) || double.IsInfinity(n2) || n2 <= 0)
                 throw new Exception($"Refraction index invalid (≤ 0 or NaN) at x = {newX:F3}");
-
-            if (n2 <= 0)
-                throw new Exception($"Refraction index cannot be ≤ 0 (at x = {newX:F3})");
-
 
             double sinA1 = Math.Sin(angle * DegToRad);
             double sinA2 = n1 * sinA1 / n2;
@@ -98,16 +81,11 @@ public class RayCalculator
                 throw new Exception($"Total internal reflection at x = {newX:F3}");
 
             double newAngle = Math.Asin(sinA2) * RadToDeg;
-
             
-            // Нормализация угла при переходе через 180 градусов, чтобы не было скачков
             if (dx < 0) 
                 newAngle = 180.0 - newAngle;
             else if (dx >= 0 && angle > 90) 
                 newAngle = 180.0 - newAngle;
-
-            if (dx < 0) newAngle = 180.0 - newAngle;
-
 
             x = newX;
             y = newY;
@@ -116,15 +94,8 @@ public class RayCalculator
 
             points.Add(new TrajectoryPoint
             {
-
                 X = Math.Round(x, 4), Y = Math.Round(y, 4),
                 N = Math.Round(n2, 4), Angle = Math.Round(angle, 4)
-
-                X = Math.Round(x, 4),
-                Y = Math.Round(y, 4),
-                N = Math.Round(n2, 4),
-                Angle = Math.Round(angle, 4)
-
             });
         }
 
@@ -133,11 +104,10 @@ public class RayCalculator
 
     private double SafeEvaluate(FormulaParser parser, double x)
     {
-
         try 
         { 
             var val = parser.Evaluate(x);
-            if (double.IsNaN(val) || double.IsInfinity(val)) return -1; // Спровоцирует ошибку на следующем шаге
+            if (double.IsNaN(val) || double.IsInfinity(val)) return -1; 
             return val; 
         }
         catch (Exception ex) 
@@ -146,9 +116,3 @@ public class RayCalculator
         }
     }
 }
-
-        try { return parser.Evaluate(x); }
-        catch (Exception ex) { throw new Exception($"Error at x = {x:F3}: {ex.Message}"); }
-    }
-}
-
