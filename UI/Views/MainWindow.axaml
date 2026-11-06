@@ -6,17 +6,23 @@
         Width="1280" Height="800" MinWidth="1000" MinHeight="650">
 
     <Window.Styles>
+
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#FFD700" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
         <Style Selector="TextBlock.error">
             <Setter Property="Foreground" Value="#ff6b6b" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
         <Style Selector="TextBlock.label">
-            <Setter Property="Foreground" Value="#9aa0ae" />
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#FFD700" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Margin" Value="0,8,0,2" />
         </Style>
         <Style Selector="TextBlock.stat">
+            <Setter Property="Foreground" Value="#FFD700" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Margin" Value="0,0,0,8" />
         </Style>
