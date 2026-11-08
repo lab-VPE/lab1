@@ -1,8 +1,3 @@
-Максим Жук:
-Вот полный, финальный и правильный код для файла Core/Physics/RayCalculator.cs. В нём учтены все правки: и защита от NaN (из main), и правильная физика градиентной оптики с делением на n.
-вот весь файл RayCalculator.cs целиком. Скопируй его и полностью замени им содержимое твоего файла (сотри всё, что там есть, и вставь это):
-
-`csharp
 using Core.Formula;
 using Core.Models;
 
@@ -30,8 +25,8 @@ public class RayCalculator
         {
             // Защита начального n (сохранено из main)
             double startN = parser.Evaluate(request.StartPoint.X);
-            if (double.IsNaN(startN) double.IsInfinity(startN) startN <= 0)
-throw new Exception($"Invalid initial refraction index at start point: {startN}");
+            if (double.IsNaN(startN) || double.IsInfinity(startN) || startN <= 0)
+                throw new Exception($"Invalid initial refraction index at start point: {startN}");
 
             var trajectory = CalculateTrajectory(request, parser);
             result.Trajectory = trajectory;
@@ -75,8 +70,8 @@ throw new Exception($"Invalid initial refraction index at start point: {startN}"
             double n = SafeEvaluate(parser, x);
 
             // 2. Проверяем его на адекватность (защита из main)
-            if (double.IsNaN(n) double.IsInfinity(n) n <= 0)
-throw new Exception($"Refraction index invalid (≤ 0 or NaN) at x = {x:F3}");
+            if (double.IsNaN(n) || double.IsInfinity(n) || n <= 0)
+                throw new Exception($"Refraction index invalid (≤ 0 or NaN) at x = {x:F3}");
 
             // 3. Считаем производную среды по X
             double dndx = NumericalDerivative(parser, x);
@@ -91,9 +86,9 @@ throw new Exception($"Refraction index invalid (≤ 0 or NaN) at x = {x:F3}");
             double newY = y + Math.Sin(angleRad) * ds;
 
             // 6. Проверка выхода за границы
-            if (newX < request.Bounds.XMin newX > request.Bounds.XMax
-        newY < request.Bounds.YMin || newY > request.Bounds.YMax)
-break;
+            if (newX < request.Bounds.XMin || newX > request.Bounds.XMax ||
+                newY < request.Bounds.YMin || newY > request.Bounds.YMax)
+                break;
 
             x = newX;
             y = newY;
@@ -111,9 +106,8 @@ break;
         return points;
     }
 
-    Максим Жук:
-// Вспомогательный метод для численного дифференцирования
-private double NumericalDerivative(FormulaParser parser, double x)
+    // Вспомогательный метод для численного дифференцирования
+    private double NumericalDerivative(FormulaParser parser, double x)
     {
         double h = 1e-4;
         double nPlus = SafeEvaluate(parser, x + h);
