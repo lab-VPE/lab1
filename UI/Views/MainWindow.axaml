@@ -39,7 +39,15 @@
             <StackPanel Margin="16" Spacing="2">
                 <TextBlock Text="Параметры" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
 
-                <TextBlock Classes="label" Text="Формула среды n(x, y)" />
+                <Border IsVisible="{Binding IsDemoMode}" Background="#5c4a00" CornerRadius="4" Padding="8,4" Margin="0,0,0,8">
+                    <TextBlock Text="Демо-данные: расчёт не выполняется" Foreground="#ffd166" FontSize="12" TextWrapping="Wrap" />
+                </Border>
+
+                <TextBlock Classes="label" Text="Готовая среда" />
+                <ComboBox HorizontalAlignment="Stretch" PlaceholderText="Выбрать из списка"
+                          ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset, Mode=TwoWay}" />
+
+                <TextBlock Classes="label" Text="Формула среды n(x)" />
                 <TextBox Text="{Binding EnvironmentFormula, Mode=TwoWay}" Watermark="1.0 + 0.05*x" />
                 <TextBlock Classes="error" Text="{Binding FormulaError}" />
 
@@ -59,6 +67,15 @@
                 <TextBox Text="{Binding StepSizeText, Mode=TwoWay}" />
                 <TextBlock Classes="error" Text="{Binding StepError}" />
 
+                <TextBlock Classes="label" Text="Область расчёта" />
+                <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
+                    <TextBox Grid.Row="0" Grid.Column="0" Watermark="X min" Text="{Binding XMinText, Mode=TwoWay}" />
+                    <TextBox Grid.Row="0" Grid.Column="2" Watermark="X max" Text="{Binding XMaxText, Mode=TwoWay}" />
+                    <TextBox Grid.Row="1" Grid.Column="0" Margin="0,6,0,0" Watermark="Y min" Text="{Binding YMinText, Mode=TwoWay}" />
+                    <TextBox Grid.Row="1" Grid.Column="2" Margin="0,6,0,0" Watermark="Y max" Text="{Binding YMaxText, Mode=TwoWay}" />
+                </Grid>
+                <TextBlock Classes="error" Text="{Binding BoundsError}" />
+
                 <TextBlock Classes="label" Text="Цвет луча (#rrggbb)" />
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBox Grid.Column="0" Text="{Binding Color, Mode=TwoWay}" />
@@ -72,6 +89,7 @@
                     <Button Content="Проверить" Command="{Binding CheckCommand}" />
                     <Button Content="Запустить" Command="{Binding RunCommand}" Classes="accent" />
                     <Button Content="Сбросить" Command="{Binding ResetCommand}" />
+                    <Button Content="Отмена расчёта" Command="{Binding CancelCommand}" IsVisible="{Binding IsRunning}" />
                 </StackPanel>
 
                 <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsRunning}" Margin="0,12,0,0" />
@@ -80,11 +98,11 @@
         </ScrollViewer>
 
         <!-- ================= Центр: сцена и график ================= -->
-        <Grid Grid.Column="1" RowDefinitions="*,220" Margin="8">
-            <Border Grid.Row="0" CornerRadius="6" ClipToBounds="True">
+        <Grid x:Name="CenterGrid" Grid.Column="1" RowDefinitions="*,220" Margin="8">
+            <Border x:Name="SceneHost" Grid.Row="0" CornerRadius="6" ClipToBounds="True" IsVisible="{Binding IsSceneVisible}">
                 <ctrl:RayCanvas x:Name="Scene" Progress="{Binding Progress}" />
             </Border>
-            <Border Grid.Row="1" Margin="0,8,0,0" CornerRadius="6" Background="#14161c" Padding="4">
+            <Border x:Name="ChartHost" Grid.Row="1" Margin="0,8,0,0" CornerRadius="6" Background="#14161c" Padding="4" IsVisible="{Binding IsChartVisible}">
                 <ctrl:RefractionChart x:Name="Chart" />
             </Border>
         </Grid>
@@ -94,16 +112,16 @@
             <StackPanel Margin="16">
                 <TextBlock Text="Статистика" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
 
-                <TextBlock Classes="label" Text="Длина пути (PathLength)" Margin="0" />
+                <TextBlock Classes="label" Text="Длина пути, усл. ед." Margin="0" />
                 <TextBlock Classes="stat" Text="{Binding Statistics.PathLength, StringFormat='{}{0:F4}', FallbackValue=—}" />
 
-                <TextBlock Classes="label" Text="Общее отклонение (TotalDeviation)" Margin="0" />
+                <TextBlock Classes="label" Text="Общее отклонение, °" Margin="0" />
                 <TextBlock Classes="stat" Text="{Binding Statistics.TotalDeviation, StringFormat='{}{0:F4}', FallbackValue=—}" />
 
-                <TextBlock Classes="label" Text="Макс. кривизна (MaxCurvature)" Margin="0" />
+                <TextBlock Classes="label" Text="Макс. кривизна, °/усл. ед." Margin="0" />
                 <TextBlock Classes="stat" Text="{Binding Statistics.MaxCurvature, StringFormat='{}{0:F6}', FallbackValue=—}" />
 
-                <TextBlock Classes="label" Text="Кривизна максимальна в (MaxCurvatureAt)" Margin="0" />
+                <TextBlock Classes="label" Text="Макс. кривизна в точке (x; y)" Margin="0" />
                 <TextBlock Classes="stat" Text="{Binding MaxCurvatureAtText}" />
 
                 <TextBlock Classes="label" Text="Мин. показатель преломления" Margin="0" />
@@ -112,7 +130,7 @@
                 <TextBlock Classes="label" Text="Макс. показатель преломления" Margin="0" />
                 <TextBlock Classes="stat" Text="{Binding Statistics.RefractionIndexMax, StringFormat='{}{0:F4}', FallbackValue=—}" />
 
-                <TextBlock Classes="label" Text="Шагов (Steps)" Margin="0" />
+                <TextBlock Classes="label" Text="Число точек траектории" Margin="0" />
                 <TextBlock Classes="stat" Text="{Binding Statistics.Steps, FallbackValue=—}" />
 
                 <TextBlock Classes="label" Text="Время расчёта, мс" Margin="0" />
@@ -120,7 +138,27 @@
 
                 <Separator Margin="0,8" />
 
+                <TextBlock Text="Экспорт" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4" />
+                <StackPanel Spacing="6" IsEnabled="{Binding HasResult}">
+                    <Button Content="Траектория (CSV)" Click="OnExportCsv" />
+                    <Button Content="Эксперимент (JSON)" Click="OnExportJson" />
+                    <Button Content="Сцена (PNG)" Click="OnExportScenePng" />
+                    <Button Content="График (PNG)" Click="OnExportChartPng" />
+                </StackPanel>
+
+                <Separator Margin="0,8" />
+
+                <TextBlock Text="Слои" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4" />
+                <CheckBox Content="Сцена (траектория)" IsChecked="{Binding IsSceneVisible, Mode=TwoWay}" />
+                <CheckBox Content="График N и угла" IsChecked="{Binding IsChartVisible, Mode=TwoWay}" />
+
+                <Separator Margin="0,8" />
+
                 <TextBlock Text="Время" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4" />
+                <Grid ColumnDefinitions="*,*" Margin="0,0,0,8">
+                    <Button Grid.Column="0" Margin="0,0,4,0" Content="{Binding PlayButtonText}" Command="{Binding PlayPauseCommand}" />
+                    <Button Grid.Column="1" Margin="4,0,0,0" Content="Заново" Command="{Binding ReplayCommand}" />
+                </Grid>
                 <Slider x:Name="TimeSlider" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1"
                         Value="{Binding Progress, Mode=TwoWay}" />
                 <TextBlock Text="{Binding PointsInfo, StringFormat='Точка: {0}'}" Foreground="#9aa0ae" />

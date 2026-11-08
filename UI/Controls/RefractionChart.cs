@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using LiveChartsCore;
+using LiveChartsCore.Defaults;
 using LiveChartsCore.Measure;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Avalonia;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
+using UI.Helpers;
 using UI.Models;
 
 namespace UI.Controls;
@@ -27,11 +29,7 @@ public class RefractionChart : UserControl
             LegendTextPaint = new SolidColorPaint(Text),
             XAxes = new[]
             {
-
-                new Axis { Name = "Координата x", LabelsPaint = new SolidColorPaint(Text), NamePaint = new SolidColorPaint(Text) },
-
-                new Axis { Name = "Точка", LabelsPaint = new SolidColorPaint(Text), NamePaint = new SolidColorPaint(Text) }
-
+                new Axis { Name = "Длина пути s, усл. ед.", LabelsPaint = new SolidColorPaint(Text), NamePaint = new SolidColorPaint(Text) }
             },
             YAxes = new[]
             {
@@ -46,22 +44,23 @@ public class RefractionChart : UserControl
 
     public void SetData(List<TrajectoryPoint> points)
     {
+        var s = TrajectoryMath.PathLengths(points);
         _chart.Series = new ISeries[]
         {
-            new LineSeries<double>
+            new LineSeries<ObservablePoint>
             {
                 Name = "N",
-                Values = points.Select(p => p.N).ToArray(),
+                Values = points.Select((p, i) => new ObservablePoint(s[i], p.N)).ToArray(),
                 Stroke = new SolidColorPaint(Teal) { StrokeThickness = 2 },
                 Fill = null,
                 GeometrySize = 0,
                 LineSmoothness = 0,
                 ScalesYAt = 0
             },
-            new LineSeries<double>
+            new LineSeries<ObservablePoint>
             {
-                Name = "Angle",
-                Values = points.Select(p => p.Angle).ToArray(),
+                Name = "Угол, °",
+                Values = points.Select((p, i) => new ObservablePoint(s[i], p.Angle)).ToArray(),
                 Stroke = new SolidColorPaint(Yellow) { StrokeThickness = 2 },
                 Fill = null,
                 GeometrySize = 0,

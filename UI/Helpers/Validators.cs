@@ -33,12 +33,6 @@ public static class Validators
 
         var s = value.Trim();
 
-        if (s.Length < 1)
-
-        if (s.Length < 4)
-
-            return ValidationResult.Fail("Формула слишком короткая");
-
         foreach (var c in s)
             if (!AllowedChars.Contains(c) && !char.IsWhiteSpace(c))
                 return ValidationResult.Fail("Недопустимые символы");
@@ -78,6 +72,19 @@ public static class Validators
         => TryParseDouble(value, out _)
             ? ValidationResult.Ok()
             : ValidationResult.Fail("Введите число");
+
+    /// <summary>Те же правила, что на сервере: XMin &lt; XMax и YMin &lt; YMax.</summary>
+    public static ValidationResult ValidateBounds(string? xMin, string? xMax, string? yMin, string? yMax)
+    {
+        if (!TryParseDouble(xMin, out var x0) || !TryParseDouble(xMax, out var x1) ||
+            !TryParseDouble(yMin, out var y0) || !TryParseDouble(yMax, out var y1))
+            return ValidationResult.Fail("Границы должны быть числами");
+        if (x0 >= x1)
+            return ValidationResult.Fail("XMin должен быть меньше XMax");
+        if (y0 >= y1)
+            return ValidationResult.Fail("YMin должен быть меньше YMax");
+        return ValidationResult.Ok();
+    }
 
     public static ValidationResult ValidateColor(string? value)
         => value != null && Regex.IsMatch(value, "^#[0-9a-fA-F]{6}$")

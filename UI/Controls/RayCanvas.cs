@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
+using UI.Helpers;
 using UI.Models;
 using SimBounds = UI.Models.Bounds;
 
@@ -21,6 +23,24 @@ public class RayCanvas : Control
     private List<TrajectoryPoint> _trajectory = new();
     private SimBounds _worldBounds = new() { XMin = -10, XMax = 10, YMin = -10, YMax = 10 };
     private Color _rayColor = Colors.Red;
+
+    // Вид: screen = base * zoom + pan. Колесо — масштаб, ЛКМ — сдвиг, двойной клик — сброс.
+    private double _zoom = 1, _panX, _panY;
+    private bool _dragging;
+    private Point _lastPointer;
+
+    public RayCanvas()
+    {
+        ClipToBounds = true;
+    }
+
+    public double Zoom => _zoom;
+
+    public void ResetView()
+    {
+        _zoom = 1; _panX = 0; _panY = 0;
+        InvalidateVisual();
+    }
 
     public List<TrajectoryPoint> Trajectory
     {
@@ -78,15 +98,59 @@ public class RayCanvas : Control
     public Point WorldToScreen(double x, double y, double w, double h)
     {
         var (s, ox, oy) = GetTransform(w, h);
-        return new Point(ox + (x - _worldBounds.XMin) * s,
-                         oy + (_worldBounds.YMax - y) * s);
+        var bx = ox + (x - _worldBounds.XMin) * s;
+        var by = oy + (_worldBounds.YMax - y) * s;
+        return new Point(bx * _zoom + _panX, by * _zoom + _panY);
     }
 
     public (double x, double y) ScreenToWorld(Point p, double w, double h)
     {
         var (s, ox, oy) = GetTransform(w, h);
-        return (_worldBounds.XMin + (p.X - ox) / s,
-                _worldBounds.YMax - (p.Y - oy) / s);
+        var bx = (p.X - _panX) / _zoom;
+        var by = (p.Y - _panY) / _zoom;
+        return (_worldBounds.XMin + (bx - ox) / s,
+                _worldBounds.YMax - (by - oy) / s);
+    }
+
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+        var factor = e.Delta.Y > 0 ? 1.15 : 1 / 1.15;
+        var p = e.GetPosition(this);
+        (_panX, _panY, _zoom) = SceneMath.ZoomAt(p.X, p.Y, _panX, _panY, _zoom, factor);
+        e.Handled = true;
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+
+        if (e.ClickCount >= 2) { ResetView(); return; }
+
+        _dragging = true;
+        _lastPointer = e.GetPosition(this);
+        e.Pointer.Capture(this);
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        if (!_dragging) return;
+        var p = e.GetPosition(this);
+        _panX += p.X - _lastPointer.X;
+        _panY += p.Y - _lastPointer.Y;
+        _lastPointer = p;
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        if (!_dragging) return;
+        _dragging = false;
+        e.Pointer.Capture(null);
     }
 
     public override void Render(DrawingContext context)
@@ -106,20 +170,24 @@ public class RayCanvas : Control
         context.DrawRectangle(new SolidColorBrush(Color.Parse("#1b1e26")),
             new Pen(new SolidColorBrush(Color.Parse("#3a3f4b")), 1), worldRect);
 
-        // Сетка
+        // Сетка: шаг подбирается по масштабу, рисуется только видимая часть области
         var gridPen = new Pen(new SolidColorBrush(Color.Parse("#262a33")), 1);
-        for (var gx = Math.Ceiling(_worldBounds.XMin); gx <= _worldBounds.XMax; gx++)
-        {
-            var a = WorldToScreen(gx, _worldBounds.YMin, w, h);
-            var b = WorldToScreen(gx, _worldBounds.YMax, w, h);
-            context.DrawLine(gridPen, a, b);
-        }
-        for (var gy = Math.Ceiling(_worldBounds.YMin); gy <= _worldBounds.YMax; gy++)
-        {
-            var a = WorldToScreen(_worldBounds.XMin, gy, w, h);
-            var b = WorldToScreen(_worldBounds.XMax, gy, w, h);
-            context.DrawLine(gridPen, a, b);
-        }
+        var (scale, _, _) = GetTransform(w, h);
+        var step = SceneMath.NiceStep(scale * _zoom);
+        var (vx0, vy1) = ScreenToWorld(new Point(0, 0), w, h);
+        var (vx1, vy0) = ScreenToWorld(new Point(w, h), w, h);
+        var gx0 = Math.Max(vx0, _worldBounds.XMin);
+        var gx1 = Math.Min(vx1, _worldBounds.XMax);
+        var gy0 = Math.Max(vy0, _worldBounds.YMin);
+        var gy1 = Math.Min(vy1, _worldBounds.YMax);
+        for (var gx = Math.Ceiling(gx0 / step) * step; gx <= gx1; gx += step)
+            context.DrawLine(gridPen,
+                WorldToScreen(gx, _worldBounds.YMin, w, h),
+                WorldToScreen(gx, _worldBounds.YMax, w, h));
+        for (var gy = Math.Ceiling(gy0 / step) * step; gy <= gy1; gy += step)
+            context.DrawLine(gridPen,
+                WorldToScreen(_worldBounds.XMin, gy, w, h),
+                WorldToScreen(_worldBounds.XMax, gy, w, h));
 
         // Оси
         var axisPen = new Pen(new SolidColorBrush(Color.Parse("#7a8090")), 1.5);
@@ -131,6 +199,13 @@ public class RayCanvas : Control
         context.DrawLine(axisPen,
             WorldToScreen(ax, _worldBounds.YMin, w, h),
             WorldToScreen(ax, _worldBounds.YMax, w, h));
+
+        // Подсказка по управлению видом
+        var hint = new FormattedText(
+            _zoom == 1 ? "Колесо — масштаб · ЛКМ — сдвиг · двойной клик — сброс" : $"Масштаб ×{_zoom:0.##} · двойной клик — сброс",
+            System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+            Typeface.Default, 11, new SolidColorBrush(Color.Parse("#6b7280")));
+        context.DrawText(hint, new Point(8, h - 20));
 
         // Траектория
         if (_trajectory.Count == 0) return;
