@@ -23,6 +23,7 @@ public class RayCalculator
 
         try
         {
+            // Защита начального n (сохранено из main)
             double startN = parser.Evaluate(request.StartPoint.X);
             if (double.IsNaN(startN) || double.IsInfinity(startN) || startN <= 0)
                 throw new Exception($"Invalid initial refraction index at start point: {startN}");
@@ -49,70 +50,83 @@ public class RayCalculator
         var points = new List<TrajectoryPoint>();
         double x = request.StartPoint.X;
         double y = request.StartPoint.Y;
-        double angle = request.StartAngle;
-        double step = request.StepSize;
+        double angleRad = request.StartAngle * DegToRad; // Угол в радианах
+        double ds = request.StepSize;
 
-        points.Add(new TrajectoryPoint { X = x, Y = y, N = SafeEvaluate(parser, x), Angle = angle });
+        points.Add(new TrajectoryPoint
+        {
+            X = x,
+            Y = y,
+            N = SafeEvaluate(parser, x),
+            Angle = request.StartAngle
+        });
 
         int maxSteps = 100000;
         int steps = 0;
 
         while (steps < maxSteps)
         {
-            double n1 = SafeEvaluate(parser, x);
-            double dx = step * Math.Cos(angle * DegToRad);
-            double dy = step * Math.Sin(angle * DegToRad);
-            double newX = x + dx;
-            double newY = y + dy;
+            // 1. Берем текущий показатель преломления в точке x
+            double n = SafeEvaluate(parser, x);
 
+            // 2. Проверяем его на адекватность (защита из main)
+            if (double.IsNaN(n) || double.IsInfinity(n) || n <= 0)
+                throw new Exception($"Refraction index invalid (≤ 0 or NaN) at x = {x:F3}");
+
+            // 3. Считаем производную среды по X
+            double dndx = NumericalDerivative(parser, x);
+
+            // 4. Считаем изменение угла (уравнение градиентной оптики с делением на n)
+            double dTheta = (dndx / n) * Math.Sin(angleRad);
+
+            // 5. Обновляем угол и координаты (метод Эйлера)
+            angleRad -= dTheta * ds;
+
+            double newX = x + Math.Cos(angleRad) * ds;
+            double newY = y + Math.Sin(angleRad) * ds;
+
+            // 6. Проверка выхода за границы
             if (newX < request.Bounds.XMin || newX > request.Bounds.XMax ||
                 newY < request.Bounds.YMin || newY > request.Bounds.YMax)
                 break;
 
-            double n2 = SafeEvaluate(parser, newX);
-
-            if (double.IsNaN(n2) || double.IsInfinity(n2) || n2 <= 0)
-                throw new Exception($"Refraction index invalid (≤ 0 or NaN) at x = {newX:F3}");
-
-            double sinA1 = Math.Sin(angle * DegToRad);
-            double sinA2 = n1 * sinA1 / n2;
-
-            if (Math.Abs(sinA2) > 1)
-                throw new Exception($"Total internal reflection at x = {newX:F3}");
-
-            double newAngle = Math.Asin(sinA2) * RadToDeg;
-            
-            if (dx < 0) 
-                newAngle = 180.0 - newAngle;
-            else if (dx >= 0 && angle > 90) 
-                newAngle = 180.0 - newAngle;
-
             x = newX;
             y = newY;
-            angle = newAngle;
             steps++;
 
             points.Add(new TrajectoryPoint
             {
-                X = Math.Round(x, 4), Y = Math.Round(y, 4),
-                N = Math.Round(n2, 4), Angle = Math.Round(angle, 4)
+                X = Math.Round(x, 4),
+                Y = Math.Round(y, 4),
+                N = Math.Round(n, 4),
+                Angle = Math.Round(angleRad * RadToDeg, 4) // Обратно в градусы
             });
         }
 
         return points;
     }
 
+    // Вспомогательный метод для численного дифференцирования
+    private double NumericalDerivative(FormulaParser parser, double x)
+    {
+        double h = 1e-4;
+        double nPlus = SafeEvaluate(parser, x + h);
+        double nMinus = SafeEvaluate(parser, x - h);
+        return (nPlus - nMinus) / (2 * h);
+    }
+
     private double SafeEvaluate(FormulaParser parser, double x)
     {
-        try 
-        { 
+        try
+        {
             var val = parser.Evaluate(x);
-            if (double.IsNaN(val) || double.IsInfinity(val)) return -1; 
-            return val; 
+            if (double.IsNaN(val) || double.IsInfinity(val))
+                throw new Exception("Значение не является числом");
+            return val;
         }
-        catch (Exception ex) 
-        { 
-            throw new Exception($"Error at x = {x:F3}: {ex.Message}"); 
+        catch (Exception ex)
+        {
+            throw new Exception($"Error at x = {x:F3}: {ex.Message}");
         }
     }
 }
